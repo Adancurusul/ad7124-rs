@@ -1,0 +1,20 @@
+[package]
+name = "ad7124-rs"
+version = "0.1.0"
+edition = "2021"
+authors = ["Adancurusul <1016867898@qq.com>"]
+#description = "Platform agnostic rust driver for Nuvoton 3-Channel Sink/Source Current DAC NCT3933U."
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+#keywords = ["dac", "driver","async", "embedded-hal","embedded-hal-driver"]
+#repository = "https://github.com/Adancurusul/nct3933"
+
+[dependencies]
+defmt = "0.3"
+embedded-hal = { version = "1.0.0", optional = true }
+embedded-hal-async = { version = "1.0.0", optional = true }
+
+[features]
+default = ["sync","async"]
+async = ["embedded-hal-async"]
+sync = ["embedded-hal"]

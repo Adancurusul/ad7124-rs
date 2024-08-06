@@ -150,6 +150,7 @@
 //! ```
 extern crate embedded_hal as hal;
 extern crate embedded_hal_async as hal_async;
+
 use hal::digital::OutputPin;
 use hal_async::spi;
 

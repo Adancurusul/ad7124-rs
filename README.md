@@ -1,3 +1,4 @@
+[![crates.io](https://img.shields.io/crates/v/nct3933.svg)](https://crates.io/crates/ad7124-rs)
 # Rust driver for 24-Bit ADC with PGA and Reference AD7124
 > This is a platform-independent Rust driver for AD7124, provided in asynchronous version, based on the [`embedded-hal`](https://github.com/japaric/embedded-hal)
 

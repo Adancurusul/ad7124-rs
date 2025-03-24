@@ -9,11 +9,84 @@ The following chips are supported：
 ## The Device
 The AD7124-8 is a low power, low noise, completely integrated analog front end for high precision measurement applications. The AD7124-8 W grade is AEC-Q100 qualified for automotive applications. The device contains a low noise, 24-bit Σ-Δ analog-to-digital converter (ADC), and can be configured to have 8 differential inputs or 15 single-ended or pseudo differential inputs. The on-chip low gain stage ensures that signals of small amplitude can be interfaced directly to the ADC.
 
+## Initialization Methods
+The library provides two ways to create an AD7124 instance:
+
+### 1. Using `new` method (backward compatible)
+Directly accepts SPI, CS, and Delay parameters - ideal for users upgrading from previous versions:
+
+```rust
+// Synchronous version
+let mut adc = AD7124Sync::new(spi, cs, delay).unwrap();
+
+// Asynchronous version
+let mut adc = AD7124Async::new(spi, cs, delay).unwrap();
+```
+
+### 2. Using `from_transport` method (new flexible approach)
+For more control over the transport layer:
+
+```rust
+// Create custom transport
+let transport = RealSyncTransport { spi, cs, delay };
+
+// Use transport to create AD7124 instance
+let mut adc = AD7124Sync::from_transport(transport);
+```
+
+These methods are functionally equivalent, but `from_transport` provides more flexibility by allowing custom transport implementations.
+
+### Simple Usage Example
+
+```rust
+// Initialize the AD7124 (synchronous version)
+let mut adc = AD7124Sync::new(spi, cs, delay).unwrap();
+
+// Initialize the device
+adc.init().unwrap();
+
+// Read device ID
+let id = adc.read_id().unwrap();
+println!("Device ID: {}", id);
+
+// Configure ADC
+adc.set_adc_control(
+    AD7124OperatingMode::Continuous,
+    AD7124PowerMode::FullPower,
+    AD7124ClkSource::ClkInternal,
+    true
+).unwrap();
+
+// Configure channel
+adc.set_channel(0, AD7124Channel::AIN0, AD7124Channel::AIN1, 0, true).unwrap();
+adc.enable_channel(0, true).unwrap();
+
+// Read data
+let data = adc.read_single_raw_data(0).unwrap();
+println!("Channel 0 data: {}", data);
+```
+
+For the asynchronous version, simply use `await` with the same methods:
+
+```rust
+// Initialize the AD7124 (asynchronous version)
+let mut adc = AD7124Async::new(spi, cs, delay).unwrap();
+
+// Initialize and read (with await)
+adc.init().await.unwrap();
+let data = adc.read_single_raw_data(0).await.unwrap();
+```
+
+> **Note:** Starting from v0.3.0, the initialization API has been restructured while maintaining backward compatibility. Existing code using the previous API will continue to work without modifications.
+
 ## Usage
 The example based on ```embassy```  is given below, using the ```STM32L432KBUx```
 ### Asynchronous version
 add the following to your Cargo.toml
-```ad7124-rs = {version = "0.2.0" , features = ["async"]}```
+```toml
+[dependencies]
+ad7124-rs = { version = "0.3.0", features = ["async"] }
+```
 ```rust
 #![no_std]
 #![no_main]
@@ -152,7 +225,10 @@ async fn main(_spawner: embassy_executor::Spawner) {
 
 ### Synchronous version
 add the following to your Cargo.toml
-```ad7124-rs = {version = "0.2.0" , features = ["sync"]}```
+```toml
+[dependencies]
+ad7124-rs = { version = "0.3.0", features = ["sync"] }
+```
 ```rust
 #![no_std]
 #![no_main]

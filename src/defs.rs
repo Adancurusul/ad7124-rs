@@ -78,7 +78,7 @@ pub const AD7124_ADC_CTRL_REG_CS_EN: u16 = 1 << 9;
 pub const AD7124_ADC_CTRL_REG_REF_EN: u16 = 1 << 8;
 pub const AD7124_ADC_CTRL_REG_POWER_MODE: fn(u16) -> u16 = |x| ((x & 0x3) << 6);
 pub const AD7124_ADC_CTRL_REG_MODE: fn(u16) -> u16 = |x| ((x & 0xF) << 2);
-pub const AD7124_ADC_CTRL_REG_CLK_SEL: fn(u16) -> u16 = |x| ((x & 0x3) << 0);
+pub const AD7124_ADC_CTRL_REG_CLK_SEL: fn(u16) -> u16 = |x| (x & 0x3);
 
 /* IO_Control_1 Register bits */
 pub const AD7124_IO_CTRL1_REG_GPIO_DAT2: u32 = 1 << 23;
@@ -89,7 +89,7 @@ pub const AD7124_IO_CTRL1_REG_PDSW: u32 = 1 << 15;
 pub const AD7124_IO_CTRL1_REG_IOUT1: fn(u32) -> u32 = |x| ((x & 0x7) << 11);
 pub const AD7124_IO_CTRL1_REG_IOUT0: fn(u32) -> u32 = |x| ((x & 0x7) << 8);
 pub const AD7124_IO_CTRL1_REG_IOUT_CH1: fn(u32) -> u32 = |x| ((x & 0xF) << 4);
-pub const AD7124_IO_CTRL1_REG_IOUT_CH0: fn(u32) -> u32 = |x| ((x & 0xF) << 0);
+pub const AD7124_IO_CTRL1_REG_IOUT_CH0: fn(u32) -> u32 = |x| (x & 0xF);
 
 // IO_Control_1 AD7124-8 specific bits
 pub const AD7124_8_IO_CTRL1_REG_GPIO_DAT4: u32 = 1 << 23;
@@ -132,7 +132,7 @@ pub const AD7124_8_IO_CTRL2_REG_GPIO_VBIAS0: u16 = 1 << 0;
 /* ID Register bits */
 //pub const AD7124_ID_REG_DEVICE_ID: u8 = |x| ((x & 0xF) << 4);
 pub const AD7124_ID_REG_DEVICE_ID: fn(u8) -> u8 = |x| ((x & 0xF) << 4);
-pub const AD7124_ID_REG_SILICON_REV: fn(u8) -> u8 = |x| ((x & 0xF) << 0);
+pub const AD7124_ID_REG_SILICON_REV: fn(u8) -> u8 = |x| (x & 0xF);
 
 /* Error Register bits */
 pub const AD7124_ERR_REG_LDO_CAP_ERR: u32 = 1 << 19;
@@ -180,7 +180,7 @@ pub const AD7124_ERREN_REG_MM_CRC_ERR_EN: u32 = 1 << 1;
 pub const AD7124_CH_MAP_REG_CH_ENABLE: u16 = 1 << 15;
 pub const AD7124_CH_MAP_REG_SETUP: fn(u16) -> u16 = |x| (x & 0x7) << 12;
 pub const AD7124_CH_MAP_REG_AINP: fn(u16) -> u16 = |x| (x & 0x1F) << 5;
-pub const AD7124_CH_MAP_REG_AINM: fn(u16) -> u16 = |x| (x & 0x1F) << 0;
+pub const AD7124_CH_MAP_REG_AINM: fn(u16) -> u16 = |x| (x & 0x1F);
 
 /* Configuration Registers 0-7 bits */
 pub const AD7124_CFG_REG_BIPOLAR: u16 = 1 << 11;
@@ -190,14 +190,14 @@ pub const AD7124_CFG_REG_REF_BUFM: u16 = 1 << 7;
 pub const AD7124_CFG_REG_AIN_BUFP: u16 = 1 << 6;
 pub const AD7124_CFG_REG_AINN_BUFM: u16 = 1 << 5;
 pub const AD7124_CFG_REG_REF_SEL: fn(u16) -> u16 = |x| (x & 0x3) << 3;
-pub const AD7124_CFG_REG_PGA: fn(u16) -> u16 = |x| (x & 0x7) << 0;
+pub const AD7124_CFG_REG_PGA: fn(u16) -> u16 = |x| (x & 0x7);
 
 /* Filter Register 0-7 bits */
 pub const AD7124_FILT_REG_FILTER: fn(u32) -> u32 = |x| (x & 0x7) << 21;
 pub const AD7124_FILT_REG_REJ60: u32 = 1 << 20;
 pub const AD7124_FILT_REG_POST_FILTER: fn(u32) -> u32 = |x| (x & 0x7) << 17;
 pub const AD7124_FILT_REG_SINGLE_CYCLE: u32 = 1 << 16;
-pub const AD7124_FILT_REG_FS: fn(u32) -> u32 = |x| (x & 0x7FF) << 0;
+pub const AD7124_FILT_REG_FS: fn(u32) -> u32 = |x| (x & 0x7FF);
 
 /* AD7124 Constants */
 pub const AD7124_CRC8_POLYNOMIAL_REPRESENTATION: u8 = 0x07; /* x8 + x2 + x + 1 */

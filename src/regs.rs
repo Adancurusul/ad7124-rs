@@ -162,14 +162,14 @@ pub enum AD7124ExCurrent {
     _1mA,
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum AD7124RW {
     ReadWrite = 1,
     Read,
     Write,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct AD7124Register {
     pub addr: u8,
     pub value: u32,
@@ -303,347 +303,378 @@ impl From<u8> for AD7124RegId {
     }
 }
 
-pub static mut REGS: [AD7124Register; AD7124RegId::RegREGNO as usize] = [
-    AD7124Register {
-        addr: 0x00,
-        value: 0x0000,
-        size: 1,
-        rw: AD7124RW::Read,
-    }, // Status
-    AD7124Register {
-        addr: 0x01,
-        value: 0x0000,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // ADC_Control
-    AD7124Register {
-        addr: 0x02,
-        value: 0x0000,
-        size: 3,
-        rw: AD7124RW::Read,
-    }, // Data
-    AD7124Register {
-        addr: 0x03,
-        value: 0x0000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // IOCon1
-    AD7124Register {
-        addr: 0x04,
-        value: 0x0000,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // IOCon2
-    AD7124Register {
-        addr: 0x05,
-        value: 0x0002,
-        size: 1,
-        rw: AD7124RW::Read,
-    }, // ID
-    AD7124Register {
-        addr: 0x06,
-        value: 0x0000,
-        size: 3,
-        rw: AD7124RW::Read,
-    }, // Error
-    AD7124Register {
-        addr: 0x07,
-        value: 0x0044,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Error_En
-    AD7124Register {
-        addr: 0x08,
-        value: 0x0000,
-        size: 1,
-        rw: AD7124RW::Read,
-    }, // Mclk_Count
-    AD7124Register {
-        addr: 0x09,
-        value: 0x8001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_0
-    AD7124Register {
-        addr: 0x0A,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_1
-    AD7124Register {
-        addr: 0x0B,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_2
-    AD7124Register {
-        addr: 0x0C,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_3
-    AD7124Register {
-        addr: 0x0D,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_4
-    AD7124Register {
-        addr: 0x0E,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_5
-    AD7124Register {
-        addr: 0x0F,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_6
-    AD7124Register {
-        addr: 0x10,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_7
-    AD7124Register {
-        addr: 0x11,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_8
-    AD7124Register {
-        addr: 0x12,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_9
-    AD7124Register {
-        addr: 0x13,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_10
-    AD7124Register {
-        addr: 0x14,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_11
-    AD7124Register {
-        addr: 0x15,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_12
-    AD7124Register {
-        addr: 0x16,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_13
-    AD7124Register {
-        addr: 0x17,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_14
-    AD7124Register {
-        addr: 0x18,
-        value: 0x0001,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Channel_15
-    AD7124Register {
-        addr: 0x19,
-        value: 0x0860,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Config_0
-    AD7124Register {
-        addr: 0x1A,
-        value: 0x0860,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Config_1
-    AD7124Register {
-        addr: 0x1B,
-        value: 0x0860,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Config_2
-    AD7124Register {
-        addr: 0x1C,
-        value: 0x0860,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Config_3
-    AD7124Register {
-        addr: 0x1D,
-        value: 0x0860,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Config_4
-    AD7124Register {
-        addr: 0x1E,
-        value: 0x0860,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Config_5
-    AD7124Register {
-        addr: 0x1F,
-        value: 0x0860,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Config_6
-    AD7124Register {
-        addr: 0x20,
-        value: 0x0860,
-        size: 2,
-        rw: AD7124RW::ReadWrite,
-    }, // Config_7
-    AD7124Register {
-        addr: 0x21,
-        value: 0x060180,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Filter_0
-    AD7124Register {
-        addr: 0x22,
-        value: 0x060180,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Filter_1
-    AD7124Register {
-        addr: 0x23,
-        value: 0x060180,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Filter_2
-    AD7124Register {
-        addr: 0x24,
-        value: 0x060180,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Filter_3
-    AD7124Register {
-        addr: 0x25,
-        value: 0x060180,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Filter_4
-    AD7124Register {
-        addr: 0x26,
-        value: 0x060180,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Filter_5
-    AD7124Register {
-        addr: 0x27,
-        value: 0x060180,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Filter_6
-    AD7124Register {
-        addr: 0x28,
-        value: 0x060180,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Filter_7
-    AD7124Register {
-        addr: 0x29,
-        value: 0x800000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Offset_0
-    AD7124Register {
-        addr: 0x2A,
-        value: 0x800000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Offset_1
-    AD7124Register {
-        addr: 0x2B,
-        value: 0x800000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Offset_2
-    AD7124Register {
-        addr: 0x2C,
-        value: 0x800000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Offset_3
-    AD7124Register {
-        addr: 0x2D,
-        value: 0x800000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Offset_4
-    AD7124Register {
-        addr: 0x2E,
-        value: 0x800000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Offset_5
-    AD7124Register {
-        addr: 0x2F,
-        value: 0x800000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Offset_6
-    AD7124Register {
-        addr: 0x30,
-        value: 0x800000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Offset_7
-    AD7124Register {
-        addr: 0x31,
-        value: 0x500000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Gain_0
-    AD7124Register {
-        addr: 0x32,
-        value: 0x500000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Gain_1
-    AD7124Register {
-        addr: 0x33,
-        value: 0x500000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Gain_2
-    AD7124Register {
-        addr: 0x34,
-        value: 0x500000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Gain_3
-    AD7124Register {
-        addr: 0x35,
-        value: 0x500000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Gain_4
-    AD7124Register {
-        addr: 0x36,
-        value: 0x500000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Gain_5
-    AD7124Register {
-        addr: 0x37,
-        value: 0x500000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Gain_6
-    AD7124Register {
-        addr: 0x38,
-        value: 0x500000,
-        size: 3,
-        rw: AD7124RW::ReadWrite,
-    }, // Gain_7
-];
+#[derive(Debug)]
+pub struct AD7124Registers {
+    registers: [AD7124Register; AD7124RegId::RegREGNO as usize],
+}
+
+impl AD7124Registers {
+    pub fn new() -> Self {
+        Self { registers: Self::create_registers() }
+    }
+
+    pub fn get(&self, reg: AD7124RegId) -> &AD7124Register {
+        &self.registers[reg as usize]
+    }
+
+    pub fn get_mut(&mut self, reg: AD7124RegId) -> &mut AD7124Register {
+        &mut self.registers[reg as usize]
+    }
+
+    pub fn update_value(&mut self, reg: AD7124RegId, value: u32) {
+        self.registers[reg as usize].value = value;
+    }
+
+    fn create_registers() -> [AD7124Register; 57] {
+        [
+            AD7124Register {
+                addr: 0x00,
+                value: 0x0000,
+                size: 1,
+                rw: AD7124RW::Read,
+            }, // Status
+            AD7124Register {
+                addr: 0x01,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // ADC_Control
+            AD7124Register {
+                addr: 0x02,
+                value: 0x0000,
+                size: 3,
+                rw: AD7124RW::Read,
+            }, // Data
+            AD7124Register {
+                addr: 0x03,
+                value: 0x0000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // IOCon1
+            AD7124Register {
+                addr: 0x04,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // IOCon2
+            AD7124Register {
+                addr: 0x05,
+                value: 0x0002,
+                size: 1,
+                rw: AD7124RW::Read,
+            }, // ID
+            AD7124Register {
+                addr: 0x06,
+                value: 0x0000,
+                size: 3,
+                rw: AD7124RW::Read,
+            }, // Error
+            AD7124Register {
+                addr: 0x07,
+                value: 0x0000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Error_En
+            AD7124Register {
+                addr: 0x08,
+                value: 0x0000,
+                size: 1,
+                rw: AD7124RW::Read,
+            }, // Mclk_Count
+            AD7124Register {
+                addr: 0x09,
+                value: 0x0800,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_0
+            AD7124Register {
+                addr: 0x0A,
+                value: 0x0801,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_1
+            AD7124Register {
+                addr: 0x0B,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_2
+            AD7124Register {
+                addr: 0x0C,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_3
+            AD7124Register {
+                addr: 0x0D,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_4
+            AD7124Register {
+                addr: 0x0E,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_5
+            AD7124Register {
+                addr: 0x0F,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_6
+            AD7124Register {
+                addr: 0x10,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_7
+            AD7124Register {
+                addr: 0x11,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_8
+            AD7124Register {
+                addr: 0x12,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_9
+            AD7124Register {
+                addr: 0x13,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_10
+            AD7124Register {
+                addr: 0x14,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_11
+            AD7124Register {
+                addr: 0x15,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_12
+            AD7124Register {
+                addr: 0x16,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_13
+            AD7124Register {
+                addr: 0x17,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_14
+            AD7124Register {
+                addr: 0x18,
+                value: 0x0000,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Channel_15
+            AD7124Register {
+                addr: 0x19,
+                value: 0x0860,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Config_0
+            AD7124Register {
+                addr: 0x1A,
+                value: 0x0860,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Config_1
+            AD7124Register {
+                addr: 0x1B,
+                value: 0x0860,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Config_2
+            AD7124Register {
+                addr: 0x1C,
+                value: 0x0860,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Config_3
+            AD7124Register {
+                addr: 0x1D,
+                value: 0x0860,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Config_4
+            AD7124Register {
+                addr: 0x1E,
+                value: 0x0860,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Config_5
+            AD7124Register {
+                addr: 0x1F,
+                value: 0x0860,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Config_6
+            AD7124Register {
+                addr: 0x20,
+                value: 0x0860,
+                size: 2,
+                rw: AD7124RW::ReadWrite,
+            }, // Config_7
+            AD7124Register {
+                addr: 0x21,
+                value: 0x060180,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Filter_0
+            AD7124Register {
+                addr: 0x22,
+                value: 0x060180,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Filter_1
+            AD7124Register {
+                addr: 0x23,
+                value: 0x060180,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Filter_2
+            AD7124Register {
+                addr: 0x24,
+                value: 0x060180,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Filter_3
+            AD7124Register {
+                addr: 0x25,
+                value: 0x060180,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Filter_4
+            AD7124Register {
+                addr: 0x26,
+                value: 0x060180,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Filter_5
+            AD7124Register {
+                addr: 0x27,
+                value: 0x060180,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Filter_6
+            AD7124Register {
+                addr: 0x28,
+                value: 0x060180,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Filter_7
+            AD7124Register {
+                addr: 0x29,
+                value: 0x800000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Offset_0
+            AD7124Register {
+                addr: 0x2A,
+                value: 0x800000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Offset_1
+            AD7124Register {
+                addr: 0x2B,
+                value: 0x800000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Offset_2
+            AD7124Register {
+                addr: 0x2C,
+                value: 0x800000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Offset_3
+            AD7124Register {
+                addr: 0x2D,
+                value: 0x800000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Offset_4
+            AD7124Register {
+                addr: 0x2E,
+                value: 0x800000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Offset_5
+            AD7124Register {
+                addr: 0x2F,
+                value: 0x800000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Offset_6
+            AD7124Register {
+                addr: 0x30,
+                value: 0x800000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Offset_7
+            AD7124Register {
+                addr: 0x31,
+                value: 0x500000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Gain_0
+            AD7124Register {
+                addr: 0x32,
+                value: 0x500000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Gain_1
+            AD7124Register {
+                addr: 0x33,
+                value: 0x500000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Gain_2
+            AD7124Register {
+                addr: 0x34,
+                value: 0x500000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Gain_3
+            AD7124Register {
+                addr: 0x35,
+                value: 0x500000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Gain_4
+            AD7124Register {
+                addr: 0x36,
+                value: 0x500000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Gain_5
+            AD7124Register {
+                addr: 0x37,
+                value: 0x500000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Gain_6
+            AD7124Register {
+                addr: 0x38,
+                value: 0x500000,
+                size: 3,
+                rw: AD7124RW::ReadWrite,
+            }, // Gain_7
+        ]
+    }
+}
+
+impl Default for AD7124Registers {
+    fn default() -> Self {
+        Self::new()
+    }
+}

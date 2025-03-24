@@ -1,6 +1,6 @@
 [package]
 name = "ad7124-rs"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Adancurusul <1016867898@qq.com>"]
 description = "driver for AD7124"

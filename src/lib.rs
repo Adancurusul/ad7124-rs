@@ -1,406 +1,185 @@
+//! # AD7124 Driver
+//!
+//! A platform-independent driver for the AD7124 family (AD7124-4/AD7124-8) with comprehensive embedded-hal support.
+//!
+//! This v4.0 driver implements lessons learned from comprehensive architecture refactoring:
+//! - **Unified Naming**: Family-consistent type naming throughout
+//! - **Core-Transport Separation**: Business logic independent of transport layer
+//! - **Embassy Ready**: Full async/await support with Embassy templates
+//! - **Simple Construction**: Direct driver construction for both sync and async
+//!
+//! ## Features
+//!
+//! - **Multiple Device Support**: AD7124-4 (4-channel), AD7124-8 (8-channel)
+//! - **Transport Layer**: SPI with embedded-hal integration
+//! - **Sync & Async**: Both blocking and non-blocking APIs
+//! - **24-bit Precision**: High-resolution ADC measurements
+//! - **Programmable Gain**: 1x to 128x amplification
+//! - **Multiple Reference Sources**: Internal 2.5V, external, or AVDD-AVSS
+//! - **No-std Compatible**: Works in embedded environments
+//! - **C FFI Support**: Static library generation for C integration
+//!
+//! ## Quick Start
+//!
+//! ### Synchronous Usage
+//!
+//! ```rust,ignore
+//! use ad7124_rs::{AD7124Sync, DeviceType, SpiTransport};
+//!
+//! // Create SPI transport (example with embedded-hal)
+//! let transport = SpiTransport::new(spi, cs, delay);
+//!
+//! // Create and initialize driver
+//! let mut adc = AD7124Sync::new(transport, DeviceType::AD7124_8)?;
+//! adc.init()?;
+//!
+//! // Setup single-ended measurement on channel 0
+//! adc.setup_single_ended(0, ad7124_rs::ChannelInput::Ain0, 0)?;
+//!
+//! // Read voltage
+//! let voltage = adc.read_voltage(0)?;
+//! println!("Voltage: {:.3}V", voltage);
+//! ```
+//!
+//! ### Asynchronous Usage
+//!
+//! ```rust,ignore
+//! use ad7124_rs::{AD7124Async, DeviceType, SpiTransport};
+//!
+//! // Create SPI transport
+//! let transport = SpiTransport::new(spi, cs, delay);
+//!
+//! // Create and initialize async driver
+//! let mut adc = AD7124Async::new(transport, DeviceType::AD7124_8)?;
+//! adc.init().await?;
+//!
+//! // Setup differential measurement
+//! adc.setup_differential(0, ad7124_driver::ChannelInput::Ain0,
+//!                       ad7124_driver::ChannelInput::Ain1, 0).await?;
+//!
+//! // Read voltage
+//! let voltage = adc.read_voltage(0).await?;
+//! ```
+//!
+
 #![no_std]
-#![no_main]
+#![cfg_attr(not(feature = "capi"), deny(unsafe_code))]
+#![warn(missing_docs)]
+#![warn(
+    missing_debug_implementations,
+    rust_2018_idioms,
+    trivial_casts,
+    unused_qualifications
+)]
 
+// Core modules - always available
+pub mod device_type;
+pub mod errors;
+pub mod registers;
+pub mod transport;
 
-//! [![crates.io](https://img.shields.io/crates/v/ad7124-rs.svg)](https://crates.io/crates/ad7124-rs)
-//! # Rust driver for 24-Bit ADC with PGA and Reference AD7124
-//! > This is a platform-independent Rust driver for AD7124, provided in both synchronous and asynchronous versions, based on the [`embedded-hal`](https://github.com/japaric/embedded-hal)
-//!
-//! The following chips are supported：
-//! * [```AD7124-8```](https://www.analog.com/en/products/ad7124-8.html)eight-channel 
-//! * [```AD7124-4```](https://www.analog.com/en/products/ad7124-4.html) four-channel 
-//!
-//! ## The Device
-//! The AD7124-8 is a low power, low noise, completely integrated analog front end for high precision measurement applications. The AD7124-8 W grade is AEC-Q100 qualified for automotive applications. The device contains a low noise, 24-bit Σ-Δ analog-to-digital converter (ADC), and can be configured to have 8 differential inputs or 15 single-ended or pseudo differential inputs. The on-chip low gain stage ensures that signals of small amplitude can be interfaced directly to the ADC.
-//!
-//! ## Initialization Methods
-//! The library provides two ways to create an AD7124 instance:
-//!
-//! ### 1. Using `new` method (backward compatible)
-//! Directly accepts SPI, CS, and Delay parameters - ideal for users upgrading from previous versions:
-//!
-//! ```rust
-//! // Synchronous version
-//! let mut adc = AD7124Sync::new(spi, cs, delay).unwrap();
-//!
-//! // Asynchronous version
-//! let mut adc = AD7124Async::new(spi, cs, delay).unwrap();
-//! ```
-//!
-//! ### 2. Using `from_transport` method (new flexible approach)
-//! For more control over the transport layer:
-//!
-//! ```rust
-//! // Create custom transport
-//! let transport = RealSyncTransport { spi, cs, delay };
-//!
-//! // Use transport to create AD7124 instance
-//! let mut adc = AD7124Sync::from_transport(transport);
-//! ```
-//!
-//! These methods are functionally equivalent, but `from_transport` provides more flexibility by allowing custom transport implementations.
-//!
-//! ### Simple Usage Example
-//!
-//! ```rust
-//! // Initialize the AD7124 (synchronous version)
-//! let mut adc = AD7124Sync::new(spi, cs, delay).unwrap();
-//!
-//! // Initialize the device
-//! adc.init().unwrap();
-//!
-//! // Read device ID
-//! let id = adc.read_id().unwrap();
-//! println!("Device ID: {}", id);
-//!
-//! // Configure ADC
-//! adc.set_adc_control(
-//!     AD7124OperatingMode::Continuous, 
-//!     AD7124PowerMode::FullPower,
-//!     AD7124ClkSource::ClkInternal,
-//!     true
-//! ).unwrap();
-//!
-//! // Configure channel
-//! adc.set_channel(0, AD7124Channel::AIN0, AD7124Channel::AIN1, 0, true).unwrap();
-//! adc.enable_channel(0, true).unwrap();
-//!
-//! // Read data
-//! let data = adc.read_single_raw_data(0).unwrap();
-//! println!("Channel 0 data: {}", data);
-//! ```
-//!
-//! For the asynchronous version, simply use `await` with the same methods:
-//!
-//! ```rust
-//! // Initialize the AD7124 (asynchronous version)
-//! let mut adc = AD7124Async::new(spi, cs, delay).unwrap();
-//!
-//! // Initialize and read (with await)
-//! adc.init().await.unwrap();
-//! let data = adc.read_single_raw_data(0).await.unwrap();
-//! ```
-//!
-//! > **Note:** Starting from v0.3.0, the initialization API has been restructured while maintaining backward compatibility. Existing code using the previous API will continue to work without modifications.
-//!
-//! ## Usage
-//! The example based on ```embassy``` is given below, using the ```STM32L432KBUx```
-//!
-//! ### Asynchronous version
-//! add the following to your Cargo.toml
-//! ```ad7124-rs = {version = "0.2.0" , features = ["async"]}```
-//! ```rust
-//! #![no_std]
-//! #![no_main]
-//!
-//! #![allow(dead_code)]
-//! #![allow(unused_imports)]
-//! use ad7124_rs::*;
-//! use defmt::*;
-//! use embassy_embedded_hal::adapter::BlockingAsync;
-//! use embassy_stm32::gpio::{Level, Output, Speed};
-//! use embassy_stm32::spi::{Config as spicon, Spi};
-//! use embassy_stm32::Config;
-//! use embassy_time::Delay;
-//! use embassy_stm32::time::Hertz;
-//! use {defmt_rtt as _, panic_probe as _};
-//! #[embassy_executor::main]
-//! async fn main(_spawner: embassy_executor::Spawner) {
-//!     info!("Hello World!");
-//!
-//!     let mut config = Config::default();
-//!     {
-//!         use embassy_stm32::rcc::*;
-//!         config.rcc.hsi = true;
-//!         config.rcc.pll = Some(Pll {
-//!             source: PllSource::MSI,
-//!             prediv: PllPreDiv::DIV1,   //pllm
-//!             mul: PllMul::MUL40,        //plln
-//!             divr: Some(PllRDiv::DIV2), //pllr
-//!             divq: Some(PllQDiv::DIV2), //pllq
-//!             divp: Some(PllPDiv::DIV7), //pllp
-//!         });
-//!         config.rcc.pllsai1 = Some(Pll {
-//!             source: PllSource::MSI,
-//!             prediv: PllPreDiv::DIV1,   //pllm
-//!             mul: PllMul::MUL16,        //plln
-//!             divr: Some(PllRDiv::DIV2), //pllr
-//!             divq: Some(PllQDiv::DIV2), //pllq
-//!             divp: Some(PllPDiv::DIV7), //pllp
-//!         });
-//!         config.rcc.sys = Sysclk::PLL1_R;
-//!         config.rcc.mux.adcsel = mux::Adcsel::PLL1_Q;
-//!     }
-//!     let p = embassy_stm32::init(config);
-//!     let mut spi_config = spicon::default();
-//!     spi_config.frequency = Hertz(1_000_000);
-//!     let spi = Spi::new_blocking(p.SPI3, p.PB3, p.PB5, p.PB4, spi_config);
-//!     let mut spi = BlockingAsync::new(spi);
-//!
-//!     let mut cs = Output::new(p.PA15, Level::Low, Speed::High);
-//!     let mut sync = Output::new(p.PB6, Level::Low, Speed::High);
-//!     sync.set_high();
-//!
-//!     let mut sensor_clk = p.PB0;
-//!     let mut sensor_data = p.PB1;
-//!     let mut adc = AD7124Async::new(spi, cs, Delay).unwrap();
-//!     adc.init().await.unwrap();
-//!     let reg_now = adc.read_id().await;
-//!     info!("ID:{}", reg_now);
-//!     let init_ctrl = adc
-//!         .set_adc_control(
-//!             AD7124OperatingMode::Continuous,
-//!             AD7124PowerMode::FullPower,
-//!             AD7124ClkSource::ClkInternal,
-//!             true,
-//!         )
-//!         .await;
-//!     info!("init_ctrl:{}", init_ctrl);
-//!     let config_set = adc
-//!         .set_config(
-//!             0,
-//!             AD7124RefSource::Internal,
-//!             AD7124GainSel::_64,
-//!             AD7124BurnoutCurrent::Off,
-//!             true,
-//!         )
-//!         .await;
-//!     info!("config_set:{}", config_set);
-//!     let filter_set = adc
-//!         .set_filter(0, AD7124Filter::POST, 1, AD7124PostFilter::NoPost, false, true)
-//!         .await;
-//!
-//!     info!("filter_set:{}", filter_set);
-//!     let adc_ch_set = adc
-//!         .set_channel(0, AD7124Channel::AIN0, AD7124Channel::AIN1, 0, true)
-//!         .await;
-//!     info!("adc_ch_set:{}", adc_ch_set);
-//!     let adc_ch_set2 = adc
-//!         .set_channel(1, AD7124Channel::AIN2, AD7124Channel::AIN3, 0, true)
-//!         .await;
-//!     info!("adc_ch_set2:{}", adc_ch_set2);
-//!     let pws = adc.set_pwrsw(true).await;
-//!     info!("pws:{}", pws);
-//!
-//!     adc.enable_channel(0, true).await.unwrap();
-//!     adc.enable_channel(1, true).await.unwrap();
-//!     let status = adc.read_register(AD7124RegId::RegStatus).await;
-//!     info!("status:{}", status);
-//!     let mut data_list = [0u32; 16];
-//!     let errif = adc.read_multi_raw_data(&mut data_list).await;
-//!     match errif {
-//!         Ok(_) => {
-//!             info!("read_multi_raw_data success");
-//!             for i in 0..16 {
-//!                 info!("data_list[{}]:{}", i, data_list[i]);
-//!             }
-//!         }
-//!         Err(e) => {
-//!             info!("read_multi_raw_data error:{}", e);
-//!         }
-//!     }
-//!     let ch1_data = adc.read_single_raw_data(0).await;
-//!     match ch1_data {
-//!         Ok(data) => {
-//!             info!("ch1_data:{}", data);
-//!         }
-//!         Err(e) => {
-//!             info!("ch1_data error:{}", e);
-//!         }
-//!     }
-//!     let ch2_data = adc.read_single_raw_data(1).await;
-//!     match ch2_data {
-//!         Ok(data) => {
-//!             info!("ch2_data:{}", data);
-//!         }
-//!         Err(e) => {
-//!             info!("ch2_data error:{}", e);
-//!         }
-//!     }
-//!
-//!     loop {
-//!
-//!     }
-//! }
-//!
-//! ```
-//!
-//! ### Synchronous version
-//! add the following to your Cargo.toml
-//! ```ad7124-rs = {version = "0.2.0" , features = ["sync"]}```
-//! ```rust
-//! #![no_std]
-//! #![no_main]
-//!
-//! #![allow(dead_code)]
-//! #![allow(unused_imports)]
-//! use ad7124_rs::*;
-//! use defmt::*;
-//! use embassy_embedded_hal::adapter::BlockingAsync;
-//! use embassy_stm32::gpio::{Level, Output, Speed};
-//! use embassy_stm32::spi::{Config as spicon, Spi};
-//! use embassy_stm32::Config;
-//! use embassy_time::Delay;
-//! use embassy_stm32::time::Hertz;
-//! use {defmt_rtt as _, panic_probe as _};
-//! #[embassy_executor::main]
-//! async fn main(_spawner: embassy_executor::Spawner) {
-//!     info!("Hello World!");
-//!
-//!     let mut config = Config::default();
-//!     {
-//!         use embassy_stm32::rcc::*;
-//!         config.rcc.hsi = true;
-//!         config.rcc.pll = Some(Pll {
-//!             source: PllSource::MSI,
-//!             prediv: PllPreDiv::DIV1,   //pllm
-//!             mul: PllMul::MUL40,        //plln
-//!             divr: Some(PllRDiv::DIV2), //pllr
-//!             divq: Some(PllQDiv::DIV2), //pllq
-//!             divp: Some(PllPDiv::DIV7), //pllp
-//!         });
-//!         config.rcc.pllsai1 = Some(Pll {
-//!             source: PllSource::MSI,
-//!             prediv: PllPreDiv::DIV1,   //pllm
-//!             mul: PllMul::MUL16,        //plln
-//!             divr: Some(PllRDiv::DIV2), //pllr
-//!             divq: Some(PllQDiv::DIV2), //pllq
-//!             divp: Some(PllPDiv::DIV7), //pllp
-//!         });
-//!         config.rcc.sys = Sysclk::PLL1_R;
-//!         config.rcc.mux.adcsel = mux::Adcsel::PLL1_Q;
-//!     }
-//!     let p = embassy_stm32::init(config);
-//!     let mut spi_config = spicon::default();
-//!     spi_config.frequency = Hertz(1_000_000);
-//!     let spi = Spi::new_blocking(p.SPI3, p.PB3, p.PB5, p.PB4, spi_config);
-//!
-//!     let mut cs = Output::new(p.PA15, Level::Low, Speed::High);
-//!     let mut sync = Output::new(p.PB6, Level::Low, Speed::High);
-//!     sync.set_high();
-//!
-//!     let mut sensor_clk = p.PB0;
-//!     let mut sensor_data = p.PB1;
-//!     let mut adc = AD7124Sync::new(spi, cs, Delay).unwrap();
-//!     adc.init().unwrap();
-//!     let reg_now = adc.read_id();
-//!     info!("ID:{}", reg_now);
-//!     let init_ctrl = adc
-//!         .set_adc_control(
-//!             AD7124OperatingMode::Continuous,
-//!             AD7124PowerMode::FullPower,
-//!             AD7124ClkSource::ClkInternal,
-//!             true,
-//!         )
-//!         ;
-//!     info!("init_ctrl:{}", init_ctrl);
-//!     let config_set = adc
-//!         .set_config(
-//!             0,
-//!             AD7124RefSource::Internal,
-//!             AD7124GainSel::_64,
-//!             AD7124BurnoutCurrent::Off,
-//!             true,
-//!         )
-//!         ;
-//!     info!("config_set:{}", config_set);
-//!     let filter_set = adc
-//!         .set_filter(0, AD7124Filter::POST, 1, AD7124PostFilter::NoPost, false, true)
-//!         ;
-//!
-//!     info!("filter_set:{}", filter_set);
-//!     let adc_ch_set = adc
-//!         .set_channel(0, AD7124Channel::AIN0, AD7124Channel::AIN1, 0, true)
-//!         ;
-//!     info!("adc_ch_set:{}", adc_ch_set);
-//!     let adc_ch_set2 = adc
-//!         .set_channel(1, AD7124Channel::AIN2, AD7124Channel::AIN3, 0, true)
-//!         ;
-//!     info!("adc_ch_set2:{}", adc_ch_set2);
-//!     let pws = adc.set_pwrsw(true);
-//!     info!("pws:{}", pws);
-//!
-//!     adc.enable_channel(0, true).unwrap();
-//!     adc.enable_channel(1, true).unwrap();
-//!     let status = adc.read_register(AD7124RegId::RegStatus);
-//!     info!("status:{}", status);
-//!     let mut data_list = [0u32; 16];
-//!     let errif = adc.read_multi_raw_data(&mut data_list);
-//!     match errif {
-//!         Ok(_) => {
-//!             info!("read_multi_raw_data success");
-//!             for i in 0..16 {
-//!                 info!("data_list[{}]:{}", i, data_list[i]);
-//!             }
-//!         }
-//!         Err(e) => {
-//!             info!("read_multi_raw_data error:{}", e);
-//!         }
-//!     }
-//!     let ch1_data = adc.read_single_raw_data(0);
-//!     match ch1_data {
-//!         Ok(data) => {
-//!             info!("ch1_data:{}", data);
-//!         }
-//!         Err(e) => {
-//!             info!("ch1_data error:{}", e);
-//!         }
-//!     }
-//!     let ch2_data = adc.read_single_raw_data(1);
-//!     match ch2_data {
-//!         Ok(data) => {
-//!             info!("ch2_data:{}", data);
-//!         }
-//!         Err(e) => {
-//!             info!("ch2_data error:{}", e);
-//!         }
-//!     }
-//!
-//!     loop {
-//!
-//!     }
-//! }
-//!
-//! ```
-
-
-extern crate embedded_hal as hal;
-extern crate embedded_hal_async as hal_async;
-
-
-
-mod crc8;
-pub use crc8::calc_crc8;
-
-mod defs;
-pub use defs::*;
-
-mod regs;
-pub use regs::*;
-
-mod errors;
-pub use errors::*;
-
-/// Re-export public types and modules
+// Driver core implementation
 pub mod ad7124;
-pub use ad7124::{AD7124Core, SyncTransport, AsyncTransport, RealSyncTransport, RealAsyncTransport};
 
-// For backward compatibility, re-export old types and functions
-#[cfg(feature = "sync")]
-pub use ad7124::ad7124_sync::AD7124 as AD7124Sync;
+// C FFI interface (optional feature)
+#[cfg(feature = "capi")]
+pub mod ffi;
+
+// Re-exports for convenience
+pub use device_type::{DeviceCapabilities, DeviceFeature, DeviceType};
+pub use errors::{AD7124CoreError, AD7124Error};
+pub use registers::*;
+
+// Transport re-exports
+pub use transport::{spi_speeds, SpiSpeedValidator, SyncSpiTransport};
 
 #[cfg(feature = "async")]
-pub use ad7124::ad7124_async::AD7124 as AD7124Async;
+pub use transport::AsyncSpiTransport;
 
-// For backward compatibility, redefine original constants
-pub const AD7124_DEFAULT_TIMEOUT_MS: u32 = 100;
+#[cfg(feature = "embedded-hal")]
+pub use transport::SpiTransport;
 
-// Maximum number of channels depends on the chip variant
-#[cfg(feature = "ad7124-8")]
-pub const AD7124_MAX_CHANNELS: u8 = 15;
+// Driver re-exports from ad7124 module (unified API)
+pub use ad7124::AD7124Sync;
 
-#[cfg(all(feature = "ad7124-4", not(feature = "ad7124-8")))]
-pub const AD7124_MAX_CHANNELS: u8 = 8;
+#[cfg(feature = "async")]
+pub use ad7124::AD7124Async;
 
+// Configuration re-exports
+pub use ad7124::{AD7124Config, ChannelConfig, FilterConfig, SetupConfig};
 
+/// Library version information
+pub mod version {
+    /// Major version
+    pub const MAJOR: u32 = 4;
+    /// Minor version  
+    pub const MINOR: u32 = 0;
+    /// Patch version
+    pub const PATCH: u32 = 0;
+    /// Version string
+    pub const VERSION: &str = concat!(
+        env!("CARGO_PKG_VERSION_MAJOR"),
+        ".",
+        env!("CARGO_PKG_VERSION_MINOR"),
+        ".",
+        env!("CARGO_PKG_VERSION_PATCH")
+    );
+}
 
+/// Common type aliases for convenience
+pub mod types {
+    use crate::AD7124Error;
+
+    /// Standard result type for AD7124 operations
+    pub type Result<T, TransportE = (), PinE = ()> =
+        core::result::Result<T, AD7124Error<TransportE, PinE>>;
+
+    /// Core error result type
+    pub type CoreResult<T> = core::result::Result<T, crate::errors::AD7124CoreError>;
+
+    /// Device capabilities type
+    pub type Capabilities = crate::device_type::DeviceCapabilities;
+
+    /// Configuration type
+    pub type Config = crate::ad7124::AD7124Config;
+}
+
+/// Prelude module for common imports
+pub mod prelude {
+    pub use crate::ad7124::{AD7124Config, AD7124Sync, ChannelConfig, FilterConfig, SetupConfig};
+    pub use crate::device_type::{DeviceCapabilities, DeviceType};
+    pub use crate::errors::{AD7124CoreError, AD7124Error};
+    pub use crate::registers::{
+        ChannelInput, ClockSource, OperatingMode, PgaGain, PowerMode, ReferenceSource,
+    };
+    pub use crate::transport::SyncSpiTransport;
+    pub use crate::types::{CoreResult, Result};
+
+    #[cfg(feature = "async")]
+    pub use crate::ad7124::AD7124Async;
+
+    #[cfg(feature = "async")]
+    pub use crate::transport::AsyncSpiTransport;
+
+    #[cfg(feature = "embedded-hal")]
+    pub use crate::transport::SpiTransport;
+}
+
+/// Compile-time feature validation
+const _: () = {
+    #[cfg(all(feature = "async", not(feature = "embedded-hal-async")))]
+    compile_error!("async feature requires embedded-hal-async feature");
+
+    #[cfg(all(
+        feature = "full-async",
+        not(all(feature = "async", feature = "embedded-hal-async"))
+    ))]
+    compile_error!("full-async feature requires both async and embedded-hal-async features");
+};
+
+// Panic handler for C FFI builds - applications should provide their own
+#[cfg(all(not(test), feature = "capi"))]
+#[panic_handler]
+fn panic(_info: &core::panic::PanicInfo<'_>) -> ! {
+    loop {}
+}

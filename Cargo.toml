@@ -1,22 +1,57 @@
 [package]
 name = "ad7124-rs"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 authors = ["Adancurusul <1016867898@qq.com>"]
-description = "driver for AD7124"
-readme = "README.md"
+description = "A platform-independent driver for the AD7124 family (AD7124-4/AD7124-8) 24-bit ADC with embedded-hal support"
 license = "MIT OR Apache-2.0"
-keywords = ["adc", "driver", "embedded-hal","embedded-hal-driver"]
 repository = "https://github.com/Adancurusul/ad7124-rs"
+keywords = ["embedded", "spi", "adc", "ad7124", "no-std"]
+categories = ["embedded", "hardware-support", "no-std"]
+
+[lib]
+name = "ad7124_rs"
+# Uncomment the line below when building C FFI library
+# crate-type = ["rlib", "staticlib", "cdylib"]  # Support C FFI
+
+[profile.dev]
+panic = "abort"  # Required for embedded environments
+
+[profile.release]
+panic = "abort"  # Required for embedded environments
+opt-level = 3    # Optimize for performance
+lto = true       # Enable link-time optimization
 
 [dependencies]
-defmt = "0.3"
-embedded-hal = { version = "1.0.0", optional = true }
-embedded-hal-async = { version = "1.0.0", optional = true }
+# embedded-hal ecosystem support
+embedded-hal = { version = "^1.0", default-features = false, optional = true }
+embedded-hal-async = { version = "^1.0", default-features = false, optional = true }
+
+# no_std collections
+heapless = { version = "0.8", default-features = false }
+
+# Optional features
+defmt = { version = "^0.3", optional = true }
+
 
 [features]
-default = ["sync","async","ad7124-8"]
-async = ["embedded-hal-async"]
-sync = ["embedded-hal"]
-ad7124-8 = []
+default = ["embedded-hal"]
+
+# Basic features
+embedded-hal = ["dep:embedded-hal"]
+embedded-hal-async = ["dep:embedded-hal-async"]
+async = ["embedded-hal-async"]  # async feature requires embedded-hal-async
+
+# Combined features
+full-async = ["async", "embedded-hal-async", "embedded-hal"]
+
+# Device variants
 ad7124-4 = []
+ad7124-8 = []
+
+# Debugging and logging
+defmt = ["dep:defmt"]
+
+# C FFI support - pure no_std (includes panic handler)
+capi = []
+

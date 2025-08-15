@@ -1,0 +1,48 @@
+[package]
+edition = "2021"
+name = "embassy_usage"
+version = "0.1.0"
+authors = ["Adancurusul <1016867898@qq.com>"]
+resolver = "2"
+
+[[bin]]
+name = "embassy_usage"
+test = false
+bench = false
+
+[dependencies]
+defmt = { version = "1.0.1", optional = true }
+defmt-rtt = { version = "1.0.0", optional = true }
+
+embedded-hal = "1.0.0"
+embedded-hal-async = "1.0.0"
+embedded-io = "0.6.1"
+embedded-io-async = "0.6.1"
+embedded-storage = "0.3.1"
+
+cortex-m-rt = "0.7.3"
+
+embassy-executor = { version = "0.7", features = ["task-arena-size-1024", "arch-cortex-m", "executor-thread", "defmt", "executor-interrupt"] }
+embassy-sync = { version = "0.6" }
+embassy-time = { version = "0.4", features = ["defmt", "defmt-timestamp-uptime"] }
+cortex-m = { version = "0.7.6", features = ["critical-section-single-core"] }
+embassy-stm32 = { version = "0.2", features = ["defmt", "stm32g431cb", "unstable-pac", "memory-x", "time-driver-any"] }
+
+panic-halt = "0.2.0"
+
+ad7124-rs = { path = "../../", features = ["async", "embedded-hal", "embedded-hal-async", "defmt"] }
+
+[features]
+default = ["defmt", "defmt-rtt"]
+defmt = ["dep:defmt"]
+defmt-rtt = ["dep:defmt-rtt"]
+
+[profile.release]
+debug = 2
+lto = true
+opt-level = 'z'
+
+[profile.dev]
+debug = 2
+lto = true
+opt-level = "z"

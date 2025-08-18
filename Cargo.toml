@@ -55,3 +55,10 @@ defmt = ["dep:defmt"]
 # C FFI support - pure no_std (includes panic handler)
 capi = []
 
+[package.metadata.docs.rs]
+# Build documentation with all features enabled
+all-features = true
+# Alternatively, specify specific features to enable
+# features = ["async", "embedded-hal", "embedded-hal-async"]
+
+
